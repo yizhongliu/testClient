@@ -53,6 +53,20 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
         <Button
+            android:id="@+id/settingDisplay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Set Display"
+            />
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <Button
             android:id="@+id/up"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -79,6 +93,27 @@
             android:layout_height="wrap_content"
             android:text="right"
             />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/previewPoint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Preview Point"
+            />
+
+        <Button
+            android:id="@+id/previewMove"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Preview Move"
+            />
+
+
     </LinearLayout>
 
 

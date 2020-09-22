@@ -11,6 +11,10 @@ import android.widget.Button;
 
 import com.google.gson.Gson;
 import com.iview.testclient.taskdata.ControlBean;
+import com.iview.testclient.taskdata.Display;
+import com.iview.testclient.taskdata.MoveDisplayBean;
+import com.iview.testclient.taskdata.PreviewPointBean;
+import com.iview.testclient.taskdata.SettingDisplayBean;
 import com.iview.testclient.taskdata.TaskData;
 
 import org.json.JSONObject;
@@ -21,13 +25,20 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, View.OnLongClickListener, View.OnTouchListener {
     private final static String TAG = "MainActivity";
+
+    private final static String deviceIp = "192.168.0.133";
 
     Button sendButton;
     Button send;
@@ -35,10 +46,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Button settingStartButton;
     Button settingStopButton;
 
+    Button settingDisplayButton;
+
     Button upButton;
     Button downButton;
     Button leftButton;
     Button rightButton;
+
+    Button previewPoint;
+    Button previewMove;
 
     ExecutorService exec = Executors.newCachedThreadPool();
     TcpClient tcpClient;
@@ -68,6 +84,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         settingStopButton = findViewById(R.id.settingStop);
         settingStopButton.setOnClickListener(this);
 
+        settingDisplayButton = findViewById(R.id.settingDisplay);
+        settingDisplayButton.setOnClickListener(this);
+
         upButton = findViewById(R.id.up);
         upButton.setOnTouchListener(this);
 
@@ -79,6 +98,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         rightButton = findViewById(R.id.right);
         rightButton.setOnTouchListener(this);
+
+        previewPoint = findViewById(R.id.previewPoint);
+        previewPoint.setOnClickListener(this);
+
+        previewMove = findViewById(R.id.previewMove);
+        previewMove.setOnClickListener(this);
     }
 
 
@@ -137,6 +162,47 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 sendSocket(msg);
                 break;
             }
+
+            case R.id.settingDisplay: {
+                Gson gson = new Gson();
+                List<String> filelist = new ArrayList<>();
+                filelist.add("Screenshot_2020-06-18-15-34-35-990_com.test.iview.logo.jpg");
+                filelist.add("Screenshot_2020-06-18-15-33-57-306_com.test.iview.logo.jpg");
+                SettingDisplayBean settingDisplayBean = new SettingDisplayBean("pic", filelist, 12.0f, "frame", true);
+
+                MoveDisplayBean moveDisplayBean = new MoveDisplayBean(settingDisplayBean);
+
+                SocketMsg<MoveDisplayBean> socketMsg = new SocketMsg<>("Setting", "Display", moveDisplayBean);
+                String msg = gson.toJson(socketMsg);
+                sendSocket(msg);
+
+                break;
+            }
+
+            case R.id.previewPoint:{
+                Display display = new Display("pic","test11.jpg", 0, 10, "rotate");
+                PreviewPointBean previewPointBean = new PreviewPointBean(display);
+
+                SocketMsg<PreviewPointBean> socketMsg = new SocketMsg<>("Preview", "Point", previewPointBean);
+                Gson gson = new Gson();
+                String msg = gson.toJson(socketMsg);
+                sendSocket(msg);
+                break;
+            }
+
+            case R.id.previewMove:{
+                Gson gson = new Gson();
+                List<String> filelist = new ArrayList<>();
+                filelist.add("indicate1.jpeg");
+                filelist.add("indicate2.jpeg");
+                SettingDisplayBean settingDisplayBean = new SettingDisplayBean("pic", filelist, 12.0f, "frame", true);
+
+                MoveDisplayBean moveDisplayBean = new MoveDisplayBean(settingDisplayBean);
+
+                SocketMsg<MoveDisplayBean> socketMsg = new SocketMsg<>("Preview", "Move", moveDisplayBean);
+                String msg = gson.toJson(socketMsg);
+                sendSocket(msg);
+            }
         }
     }
 
@@ -176,7 +242,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 try {
 
                     //1.创建监听指定服务器地址以及指定服务器监听的端口号
-                    Socket socket = new Socket("192.168.0.132", 8091);
+                    Socket socket = new Socket(deviceIp, 8091);
 
                     Log.e(TAG, "socket :" + socket);
                     //2.拿到客户端的socket对象的输出流发送给服务器数据
@@ -230,7 +296,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 try {
 
                     //1.创建监听指定服务器地址以及指定服务器监听的端口号
-                    Socket socket = new Socket("192.168.0.132", 8091);
+                //    Socket socket = new Socket("192.168.0.132", 8091);
+                    Socket socket = new Socket(deviceIp, 8091);
 
                     Log.e(TAG, "socket :" + socket);
                     //2.拿到客户端的socket对象的输出流发送给服务器数据
@@ -276,6 +343,65 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    void sendUdpPackage(final String message) {
+        new Thread() {
+            @Override
+            public void run() {
+                super.run();
+                try {
+                    DatagramSocket socket = new DatagramSocket();
+                    byte[] buf = message.getBytes();
+                    //将数据打包
+                    DatagramPacket packet = new DatagramPacket(buf, buf.length, InetAddress.getByName("192.168.0.133"), 8092);
+                    socket.send(packet);
+                    socket.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }.start();
+    }
+
+    void sendSocket2(final String message) {
+//        new Thread() {
+//            @Override
+//            public void run() {
+//                super.run();
+                try {
+
+                    //1.创建监听指定服务器地址以及指定服务器监听的端口号
+                    //    Socket socket = new Socket("192.168.0.132", 8091);
+                    Socket socket = new Socket(deviceIp, 8091);
+
+                    Log.e(TAG, "socket :" + socket);
+                    //2.拿到客户端的socket对象的输出流发送给服务器数据
+                    OutputStream os = socket.getOutputStream();
+
+                    //     String message = sendSocketMsg();
+                    //写入要发送给服务器的数据
+                    os.write(message.getBytes("UTF-8"));
+                    os.flush();
+                    socket.shutdownOutput();
+
+
+
+
+
+                    //3、关闭IO资源（注：实际开发中需要放到finally中）
+
+                    os.close();
+                    socket.close();
+                } catch (UnknownHostException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+//            }
+//        }.start();
+
+    }
+
     public String sendMsg() {
         Gson gson = new Gson();
         DataTemplate<String> dataTemplate = new DataTemplate<>("aa", "bb", null);
@@ -290,6 +416,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String msg = gson.toJson(dataTemplate);
         return msg;
     }
+
+
 
     public String sendSocketMsg() {
         Gson gson = new Gson();
@@ -319,6 +447,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     // 长按触发handle
     boolean bLongTouch = false;
+
+    boolean bLongTouchUp = false;
+    boolean bLongTouchDown = false;
+    boolean bLongTouchLeft = false;
+    boolean bLongTouchRight = false;
+
     final Handler handler = new Handler();
     final Runnable mLongPressed = new Runnable() {
         public void run() {
@@ -346,12 +480,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         public void run() {
             while (bLongTouch) {
-                tcpClient.send(msg);
+                sendUdpPackage(msg);
+//                exec.execute(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        tcpClient.send(msg);
+//                    }
+//                });
+             //   tcpClient.send(msg);
+
+             //   sendSocket2(msg);
                 try {
                     Thread.sleep(80);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+            }
+        }
+    }
+
+    public class ShortConnectThread extends Thread {
+        String msg;
+        ShortConnectThread(String msg) {
+            this.msg = msg;
+        }
+        @Override
+        public void run() {
+            while (bLongTouch) {
+                sendSocket2(msg);
+//                try {
+//                    Thread.sleep(20);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
             }
         }
     }
@@ -380,7 +541,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                     bLongTouch = true;
 
-                    tcpClient = new TcpClient("192.168.0.132", 8092);
+                    tcpClient = new TcpClient(deviceIp, 8092);
                     exec.execute(tcpClient);
 
                     Gson gson = new Gson();
@@ -404,7 +565,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                     bLongTouch = true;
 
-                    tcpClient = new TcpClient("192.168.0.132", 8092);
+                    tcpClient = new TcpClient(deviceIp, 8092);
                     exec.execute(tcpClient);
 
                     Gson gson = new Gson();
@@ -428,7 +589,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                     bLongTouch = true;
 
-                    tcpClient = new TcpClient("192.168.0.132", 8092);
+                //    tcpClient = new TcpClient("192.168.0.132", 8092);
+                    tcpClient = new TcpClient(deviceIp, 8092);
                     exec.execute(tcpClient);
 
                     Gson gson = new Gson();
@@ -441,6 +603,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 if(event.getAction() == MotionEvent.ACTION_UP) {
                     bLongTouch = false;
+
                     tcpClient.closeSelf();
                     // 放开处理
                 }
@@ -452,7 +615,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                     bLongTouch = true;
 
-                    tcpClient = new TcpClient("192.168.0.132", 8092);
+                    tcpClient = new TcpClient(deviceIp, 8092);
                     exec.execute(tcpClient);
 
                     Gson gson = new Gson();
@@ -461,6 +624,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     String msg = gson.toJson(socketMsg);
                     LongConnectThread longConnectThread = new LongConnectThread(msg);
                     longConnectThread.start();
+
+//                    ShortConnectThread longConnectThread = new ShortConnectThread(msg);
+//                    longConnectThread.start();
 
                 }
                 if(event.getAction() == MotionEvent.ACTION_UP) {

@@ -3,8 +3,12 @@ package com.iview.testclient;
 import android.util.Log;
 
 import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.net.Socket;
 
 public class TcpClient implements Runnable {
@@ -16,7 +20,10 @@ public class TcpClient implements Runnable {
 
     private PrintWriter pw;
     private InputStream inputStream;
+    private OutputStream outputStream;
     private DataInputStream dataInputStream;
+
+    private Writer writer;
 
     private boolean isRun = true;
 
@@ -36,11 +43,20 @@ public class TcpClient implements Runnable {
 
     public void send(String msg) {
 
-        if (pw != null) {
-            pw.println(msg);
+        if (writer != null) {
+//            pw.println(msg);
+//            Log.e(TAG, "befflushore  msg");
+//            pw.flush();
+//            Log.e(TAG, "send msg" + msg);
+            try {
+                Log.e(TAG, "before send msg" + msg);
+                writer.write(msg);
+                writer.flush();
+                Log.e(TAG, "send msg" + msg);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
-            pw.flush();
-            Log.e(TAG, "send msg" + msg);
         }
 
     }
@@ -48,8 +64,17 @@ public class TcpClient implements Runnable {
     public void run() {
         try {
             socket = new Socket(serverIp, serverPort);
-          //  socket.setSoTimeout(5000);
-            pw =new PrintWriter(socket.getOutputStream(), true);
+
+        //    socket.setReceiveBufferSize(100);
+            socket.setSendBufferSize(100);
+            socket.setTcpNoDelay(true);
+            socket.setSoTimeout(5000);
+            outputStream = socket.getOutputStream();
+     //       pw =new PrintWriter(outputStream, false);
+
+            writer = new OutputStreamWriter(outputStream);
+
+
             inputStream = socket.getInputStream();
             dataInputStream = new DataInputStream(inputStream);
 
@@ -66,7 +91,7 @@ public class TcpClient implements Runnable {
 //
 //            }
             try {
-                Thread.sleep(10);
+                Thread.sleep(110);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -74,7 +99,9 @@ public class TcpClient implements Runnable {
 
         try {
             Log.e(TAG, "close client");
-            pw.close();
+           // pw.close();
+            writer.close();
+            outputStream.close();
             inputStream.close();
             dataInputStream.close();
             socket.close();

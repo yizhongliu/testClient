@@ -3,12 +3,12 @@ package com.iview.testclient;
 public class SocketMsg<T> {
     String type;
     String action;
-    T args;
+    T arg;
 
     public SocketMsg(String type, String action, T args) {
         this.type = type;
         this.action = action;
-        this.args = args;
+        this.arg = args;
     }
 
     public String getType() {
@@ -27,19 +27,19 @@ public class SocketMsg<T> {
         this.action = action;
     }
 
-    public T getArgs() {
-        return args;
+    public T getArg() {
+        return arg;
     }
 
-    public void setArgs(T args) {
-        this.args = args;
+    public void setArg(T arg) {
+        this.arg = arg;
     }
 
     @Override
     public String toString() {
         String argString = null;
-        if (args != null) {
-            argString = args.toString();
+        if (arg != null) {
+            argString = arg.toString();
         } else {
             argString = "args is null";
         }
